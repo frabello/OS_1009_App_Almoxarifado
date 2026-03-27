@@ -224,7 +224,7 @@ function handleAccess(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         email,
-        timestamp:new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}),
+        timestamp: new Date().toISOString(),
         userAgent:navigator.userAgent,
         domain,
         site:window.location.hostname
