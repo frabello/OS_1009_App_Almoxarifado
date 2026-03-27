@@ -186,7 +186,7 @@ footer a:hover{color:var(--yellow)}
   </div>
 
   <div class="info-strip">
-    <span><span class="dot"></span>Desenvolvido por <a href="https://www.memorycomp.com.br" target="_blank">Memory IT Company</a> </span>
+    <span><span class="dot"></span>Desenvolvido por Memory IT Company</span>
     <span><span class="dot"></span>Acesso seguro e restrito</span>
   </div>
 
@@ -198,46 +198,52 @@ footer a:hover{color:var(--yellow)}
 <script>
 const POWER_AUTOMATE_URL = 'https://default99e208de4e92487db6050bc16a3624.c2.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/9ad51d1288614c709ec6963180b0fc0f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=HArFz4Oq-Px3HxXWMkko3WCwIEh7Dm6kXUNC7IUqPkM';
 const REDIRECT_URL = 'dashboard.html';
-const BLOCKED_DOMAINS = ['gmail.com','hotmail.com','outlook.com','outlook.com.br','yahoo.com','yahoo.com.br','icloud.com','live.com','msn.com','bol.com.br','uol.com.br','terra.com.br','ig.com.br','globo.com','protonmail.com','pm.me'];
+const BLOCKED_DOMAINS = ['gmail.com','googlemail.com','hotmail.com','hotmail.com.br','outlook.com','outlook.com.br','live.com','live.com.br','yahoo.com','yahoo.com.br','icloud.com','me.com','mac.com','msn.com','bol.com.br','uol.com.br','terra.com.br','ig.com.br','globo.com','r7.com','protonmail.com','tutanota.com','aol.com'];
 
 function show(id){document.getElementById(id).classList.add('show')}
 function hide(id){document.getElementById(id).classList.remove('show')}
 function setError(msg){const el=document.getElementById('error-msg');el.textContent=msg;show('error-msg')}
+function getEmailDomain(email){return email.split('@')[1]?.toLowerCase().trim()||''}
+function isValidEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())}
+function isPersonalEmail(email){return BLOCKED_DOMAINS.includes(getEmailDomain(email))}
 
-function handleAccess(){
+function logToSharePoint(email){
+  if(!POWER_AUTOMATE_URL) return Promise.resolve();
+  const payload = {
+    email:     email,
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    domain:    getEmailDomain(email),
+    site:      window.location.hostname,
+  };
+  fetch(POWER_AUTOMATE_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload),
+  }).catch(()=>{});
+  return Promise.resolve();
+}
+
+async function handleAccess(){
   const input = document.getElementById('email');
   const email = input.value.trim().toLowerCase();
   hide('error-msg');
 
   if(!email){setError('Informe seu e-mail corporativo.');input.focus();return}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setError('E-mail inválido. Verifique o formato.');input.focus();return}
-  const domain = email.split('@')[1];
-  if(BLOCKED_DOMAINS.includes(domain)){setError('Use apenas e-mail corporativo. E-mails pessoais não são permitidos.');input.focus();return}
+  if(!isValidEmail(email)){setError('E-mail inválido. Verifique o formato.');input.focus();return}
+  if(isPersonalEmail(email)){setError('Use apenas e-mail corporativo. E-mails pessoais não são permitidos.');input.focus();return}
 
   document.getElementById('btn-access').disabled = true;
   document.getElementById('form-area').style.display = 'none';
   show('state-loading');
 
-  if(POWER_AUTOMATE_URL){
-    fetch(POWER_AUTOMATE_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        email,
-        timestamp: new Date().toISOString(),
-        userAgent:navigator.userAgent,
-        domain,
-        site:window.location.hostname
-      })
-    }).catch(()=>{});
-  }
+  logToSharePoint(email);
 
-  setTimeout(()=>{
-    hide('state-loading');
-    show('state-success');
-    requestAnimationFrame(()=>{setTimeout(()=>{document.getElementById('progress-fill').style.width='100%'},50)});
-    setTimeout(()=>{window.location.href=REDIRECT_URL},3000);
-  },800);
+  await new Promise(r=>setTimeout(r,800));
+  hide('state-loading');
+  show('state-success');
+  requestAnimationFrame(()=>{setTimeout(()=>{document.getElementById('progress-fill').style.width='100%'},50)});
+  setTimeout(()=>{window.location.href=REDIRECT_URL},3000);
 }
 
 document.getElementById('email').addEventListener('keydown',e=>{if(e.key==='Enter')handleAccess()});
