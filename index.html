@@ -221,13 +221,13 @@ function handleAccess(){
   if(POWER_AUTOMATE_URL){
     fetch(POWER_AUTOMATE_URL,{
       method:'POST',
-      mode:'no-cors',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         email,
         timestamp:new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}),
         userAgent:navigator.userAgent,
-        domain
+        domain,
+        site:window.location.hostname
       })
     }).catch(()=>{});
   }
