@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Almoxarifado v4 — Memory IT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0f1e30;
+--surface:#162637;
+--surface2:#1d3248;
+--border:#243d57;
+--yellow:#f5a623;
+--yellow-glow:#ffb74d;
+--yellow-dim:#c47d0e;
+--text:#e8edf2;
+--text-muted:#7a93aa;
+--text-faint:#344f65;
+--radius:12px;
+--font:'Sora',sans-serif;
+--mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;width:100%}
+body{
+background:var(--bg);
+font-family:var(--font);
+color:var(--text);
+display:flex;flex-direction:column;
+align-items:center;justify-content:center;
+min-height:100vh;overflow:hidden;position:relative;
+}
+.bg-grid{
+position:fixed;inset:0;
+background-image:
+linear-gradient(rgba(245,166,35,.03) 1px,transparent 1px),
+linear-gradient(90deg,rgba(245,166,35,.03) 1px,transparent 1px);
+background-size:44px 44px;pointer-events:none;
+}
+.bg-glow{
+position:fixed;width:700px;height:700px;border-radius:50%;
+background:radial-gradient(circle,rgba(26,58,92,.6) 0%,transparent 70%);
+top:50%;left:50%;transform:translate(-50%,-55%);pointer-events:none;
+animation:pulse 7s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:.7;transform:translate(-50%,-55%) scale(1)}50%{opacity:1;transform:translate(-50%,-55%) scale(1.08)}}
+
+.wrapper{
+position:relative;z-index:1;
+display:flex;flex-direction:column;align-items:center;gap:24px;
+width:100%;max-width:420px;padding:24px 16px;
+animation:fadeUp .45s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+.brand{display:flex;flex-direction:column;align-items:center;gap:10px}
+.logo-wrap{
+background:#fff;border-radius:10px;padding:10px 20px;
+display:flex;align-items:center;justify-content:center;
+box-shadow:0 0 0 1px var(--border),0 4px 24px rgba(0,0,0,.4);
+}
+.logo-wrap img{height:34px;display:block}
+.logo-wrap .logo-text{
+font-size:17px;font-weight:700;color:#1a3a5c;
+font-family:var(--mono);letter-spacing:.5px;display:none;
+}
+.app-badge{
+display:flex;align-items:center;gap:8px;
+background:var(--surface2);
+border:1px solid var(--border);
+border-radius:20px;padding:5px 14px;
+}
+.app-badge .alm-icon{
+width:22px;height:22px;border-radius:6px;
+background:var(--yellow);
+display:flex;align-items:center;justify-content:center;
+font-size:11px;font-weight:700;color:#0f1e30;
+}
+.app-badge span{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);font-family:var(--mono)}
+
+.card{
+width:100%;
+background:var(--surface);
+border:1px solid var(--border);
+border-radius:16px;padding:32px 28px;
+box-shadow:0 8px 48px rgba(0,0,0,.5),0 0 0 1px rgba(245,166,35,.05);
+position:relative;overflow:hidden;
+}
+.card::before{
+content:'';position:absolute;top:0;left:0;right:0;height:2px;
+background:linear-gradient(90deg,transparent,var(--yellow),transparent);
+}
+
+.card-title{font-size:17px;font-weight:600;color:var(--text);margin-bottom:5px}
+.card-sub{font-size:13px;color:var(--text-muted);margin-bottom:24px;line-height:1.5}
+
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+.field label{font-size:11px;font-weight:600;letter-spacing:.9px;text-transform:uppercase;color:var(--text-muted)}
+.field input{
+background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+padding:13px 16px;font-family:var(--font);font-size:14px;color:var(--text);outline:none;
+transition:border-color .2s,box-shadow .2s;
+}
+.field input::placeholder{color:var(--text-faint)}
+.field input:focus{border-color:var(--yellow-dim);box-shadow:0 0 0 3px rgba(245,166,35,.1)}
+
+.error-msg{
+font-size:12px;color:#ef5350;padding:8px 12px;
+background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);
+border-radius:8px;margin-bottom:14px;display:none;
+}
+.error-msg.show{display:block}
+
+.btn{
+width:100%;padding:14px;
+background:var(--yellow);color:#0f1e30;
+border:none;border-radius:var(--radius);
+font-family:var(--font);font-size:14px;font-weight:700;
+cursor:pointer;transition:background .2s,transform .1s,box-shadow .2s;
+}
+.btn:hover:not(:disabled){background:var(--yellow-glow);box-shadow:0 4px 20px rgba(245,166,35,.3)}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.state-loading,.state-success{display:none;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:8px 0}
+.state-loading.show,.state-success.show{display:flex}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--yellow);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.state-loading p{font-size:13px;color:var(--text-muted)}
+.check-icon{width:48px;height:48px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px}
+.state-success h3{font-size:16px;font-weight:600;color:var(--text)}
+.state-success p{font-size:13px;color:var(--text-muted)}
+.progress-bar{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px}
+.progress-fill{height:100%;width:0%;background:var(--yellow);border-radius:2px;transition:width 3s linear}
+
+.info-strip{display:flex;align-items:center;justify-content:center;gap:18px;font-size:11px;color:var(--text-faint);font-family:var(--mono)}
+.info-strip span{display:flex;align-items:center;gap:5px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--yellow-dim);flex-shrink:0}
+
+footer{font-size:11px;color:var(--text-faint);text-align:center;line-height:1.8}
+footer a{color:var(--text-faint);text-decoration:none;border-bottom:1px solid var(--text-faint)}
+footer a:hover{color:var(--yellow)}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<div class="wrapper">
+  <div class="brand">
+    <div class="logo-wrap">
+      <img src="logo.png" alt="Memory IT" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <span class="logo-text">Memory IT</span>
+    </div>
+    <div class="app-badge">
+      <div class="alm-icon">ALM</div>
+      <span>Almoxarifado v4</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="form-area">
+      <p class="card-title">Acesso ao sistema</p>
+      <p class="card-sub">Informe seu e-mail corporativo para registrar o acesso e entrar.</p>
+      <div class="error-msg" id="error-msg"></div>
+      <div class="field">
+        <label for="email">E-mail corporativo</label>
+        <input type="email" id="email" placeholder="voce@suaempresa.com.br" autocomplete="email" autofocus>
+      </div>
+      <button class="btn" id="btn-access" onclick="handleAccess()">Acessar</button>
+    </div>
+
+    <div class="state-loading" id="state-loading">
+      <div class="spinner"></div>
+      <p>Registrando acesso...</p>
+    </div>
+
+    <div class="state-success" id="state-success">
+      <div class="check-icon">✓</div>
+      <h3>Acesso registrado</h3>
+      <p>Redirecionando para o sistema...</p>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="info-strip">
+    <span><span class="dot"></span>Desenvolvido por Memory IT Company</span>
+    <span><span class="dot"></span>Acesso seguro e restrito</span>
+  </div>
+
+  <footer>
+    © 2026 · Desenvolvido por <a href="https://www.memorycomp.com.br" target="_blank">Memory IT Company</a> · Acesso restrito
+  </footer>
+</div>
+
+<script>
+const POWER_AUTOMATE_URL = ''; // ← COLE A URL DO HTTP TRIGGER AQUI
+const REDIRECT_URL = 'dashboard.html';
+const BLOCKED_DOMAINS = ['gmail.com','hotmail.com','outlook.com','outlook.com.br','yahoo.com','yahoo.com.br','icloud.com','live.com','msn.com','bol.com.br','uol.com.br','terra.com.br','ig.com.br','globo.com','protonmail.com','pm.me'];
+
+function show(id){document.getElementById(id).classList.add('show')}
+function hide(id){document.getElementById(id).classList.remove('show')}
+function setError(msg){const el=document.getElementById('error-msg');el.textContent=msg;show('error-msg')}
+
+function handleAccess(){
+  const input = document.getElementById('email');
+  const email = input.value.trim().toLowerCase();
+  hide('error-msg');
+
+  if(!email){setError('Informe seu e-mail corporativo.');input.focus();return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setError('E-mail inválido. Verifique o formato.');input.focus();return}
+  const domain = email.split('@')[1];
+  if(BLOCKED_DOMAINS.includes(domain)){setError('Use apenas e-mail corporativo. E-mails pessoais não são permitidos.');input.focus();return}
+
+  document.getElementById('btn-access').disabled = true;
+  document.getElementById('form-area').style.display = 'none';
+  show('state-loading');
+
+  if(POWER_AUTOMATE_URL){
+    fetch(POWER_AUTOMATE_URL,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        email,
+        timestamp:new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}),
+        userAgent:navigator.userAgent,
+        domain
+      })
+    }).catch(()=>{});
+  }
+
+  setTimeout(()=>{
+    hide('state-loading');
+    show('state-success');
+    requestAnimationFrame(()=>{setTimeout(()=>{document.getElementById('progress-fill').style.width='100%'},50)});
+    setTimeout(()=>{window.location.href=REDIRECT_URL},3000);
+  },800);
+}
+
+document.getElementById('email').addEventListener('keydown',e=>{if(e.key==='Enter')handleAccess()});
+</script>
+</body>
+</html>
